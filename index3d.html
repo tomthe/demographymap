@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<head>
+  <style> body { margin: 0; } </style>
+
+  <script src="//unpkg.com/three"></script>
+  <script src="//unpkg.com/three-spritetext"></script>
+
+  <script src="//unpkg.com/3d-force-graph"></script>
+  <!--<script src="../../dist/3d-force-graph.js"></script>-->
+</head>
+
+<body>
+  <div id="3d-graph"></div>
+
+  <script>
+
+let data = {
+  nodes: [],
+  links: []
+};
+
+const streamingLoaderWorker = new Worker("streaming-tsv-parser.js");
+streamingLoaderWorker.onmessage = ({
+  data: { items, totalBytes, finished }
+}) => {
+  const rows = items
+    .map(d => ({
+      // ...d,
+      // x: Number(d.x),
+      // y: Number(d.y),
+      fx: Number(d.x)*230,
+      fy: Number(d.y)*230,
+      fz: (Number(d.year)-2000)*45,
+      year: Math.round(Number(d.year)),
+      author_name: d.author_name,
+      text: d.author_name + "l<br/>" + d.year + " ä " + d.n_works  + " " + d.predicted_gender + " " + d.countrycode,
+      n_works: Number(d.n_works),
+      // year: Number(d.date),
+	  gender: d.predicted_gender
+    }))
+    .filter(d => d.year);
+  data.nodes = data.nodes.concat(rows);
+  if (finished) {
+    console.log("done loading", data.nodes.length, "rows");
+    console.log("data", data);
+    // update graph
+    // updateGraph();
+  }
+  // do stuff with the data
+  const Graph = ForceGraph3D()
+      (document.getElementById('3d-graph'))
+        .nodeAutoColorBy('year')
+        .graphData(data)
+        // .nodeVal('n_works')
+        // .nodeRelSize(3)
+        // .nodeResolution(4)
+        .nodeLabel('text')
+        .d3Force('link', null)
+        .d3Force('charge', null)
+        .d3Force('center', null)
+        .nodeThreeObject(node => {
+          // console.log("node", node.id, node)
+          const sprite = new SpriteText(node.author_name);
+          sprite.material.depthWrite = false; // make sprite background transparent
+          sprite.color = node.color;
+          sprite.textHeight = Math.max(Math.min(24, node.n_works*3), 5);
+          return sprite;
+        });
+}
+
+streamingLoaderWorker.postMessage("demographics_authors.tsv");
+
+const N = 300;
+    const gData = {
+      nodes: [...Array(N).keys()].map(i => ({ id: i })),
+      links: [...Array(N).keys()]
+        .filter(id => id)
+        .map(id => ({
+          source: id,
+          target: Math.round(Math.random() * (id-1))
+        }))
+    };
+    console.log("gData: ", gData)
+    
+
+
+
+
+
+
+
+
+
+    // const Graph = ForceGraph3D()
+    //   (document.getElementById('3d-graph'))
+    //     .jsonUrl('../datasets/miserables.json')
+    //     .nodeAutoColorBy('group')
+    //     .nodeThreeObject(node => {
+    //       const sprite = new SpriteText(node.id);
+    //       sprite.material.depthWrite = false; // make sprite background transparent
+    //       sprite.color = node.color;
+    //       sprite.textHeight = 8;
+    //       return sprite;
+    //     });
+
+    // Spread nodes a little wider
+    // Graph.d3Force('charge').strength(-120);
+
+  </script>
+</body>

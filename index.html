@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<head>
+  <meta name="viewport" content="width=device-width,
+    initial-scale=1, maximum-scale=1, user-scalable=0"/>
+  <style> body { margin: 0; } </style>
+
+  <script src="//unpkg.com/force-graph"></script>
+  <!--<script src="../../dist/force-graph.js"></script>-->
+
+  <script src="https://unpkg.com/@tarekraafat/autocomplete.js@10.2.7/dist/autoComplete.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/@tarekraafat/autocomplete.js@10.2.7/dist/css/autoComplete.css">
+</head>
+
+<body>
+  <input id="autoComplete" type="search" dir="ltr" spellcheck=false autocorrect="off" autocomplete="off" autocapitalize="off" maxlength="2048" tabindex="1">
+  <div id="graph"></div>
+
+  <script>
+
+let data1 = {
+  nodes: [],
+  links: []
+};
+let Graph;
+
+const streamingLoaderWorker = new Worker("streaming-tsv-parser.js");
+streamingLoaderWorker.onmessage = ({
+  data: { items, totalBytes, finished }
+}) => {
+  const rows = items
+    .map(d => ({
+      // ...d,
+      // x: Number(d.x),
+      // y: Number(d.y),
+      type: d.type,
+      fx: Number(d.x)*230,
+      fy: Number(d.y)*230,
+      fz: (Number(d.year)-2000)*45,
+      year: Math.round(Number(d.year)),
+      author_name: d.text_name,
+      text: d.text_name + "<br/>" + d.year + " n_works: " + d.n_works  + " <br/>Citations:" + 
+        d.n_citations + "<br/>" + d.text_list + "<br/>" +
+        " ", //d.x.toString().substring(0,4) + " " //+ d.y.toString().substring(0,4),
+      n_works: Number(d.n_works),
+      n_citations: Number(d.n_citations),
+      // year: Number(d.date),
+	    gender: d.predicted_gender
+    }))
+    .filter(d => d.year);
+  data1.nodes = data1.nodes.concat(rows);
+  if (finished) {
+    console.log("done loading", data1.nodes.length, "rows");
+    console.log("data1", data1);
+    // update graph
+    // updateGraph();
+
+    //auto complete:
+    const config = {    
+      placeHolder: "Search...",
+        data: {
+            src: data1.nodes,
+            keys: ["author_name"]
+        },
+        resultItem: {
+            highlight: true,
+        },
+        resultsList: {
+          position: "afterend",
+          maxResults: 6,
+          noResults: true,
+        },
+        submit: true,
+    }
+    const autoCompleteJS = new autoComplete(config);
+    document.querySelector("#autoComplete").addEventListener("navigate", function (event) {
+        // "event.detail" carries the autoComplete.js "feedback" object
+        console.log("navigate: ", event.detail);
+        console.log("navigate detail: ", event.detail.selection.value);
+        Graph.centerAt(event.detail.selection.value.fx,event.detail.selection.value.fy, 1000);
+        Graph.zoom(2.1, 2000);
+    });
+    document.querySelector("#autoComplete").addEventListener("selection", function (event) {
+    // "event.detail" carries the autoComplete.js "feedback" object
+        console.log("select: ", event.detail);
+        console.log("select detail: ", event.detail.selection.value);
+        Graph.centerAt(event.detail.selection.value.fx,event.detail.selection.value.fy+16, 1000);
+        Graph.zoom(3.9, 2000);
+});
+  }
+  // do stuff with the data
+  Graph = ForceGraph()
+      (document.getElementById('graph'))
+        .graphData(data1)
+        .nodeAutoColorBy('type')
+        .nodeVal('n_works')
+        .nodeRelSize(3)
+        // .nodeResolution(4)
+        .nodeLabel('text')
+        // .d3Force('link', null)
+        // .d3Force('charge', null)
+        // .d3Force('center', null)
+        
+        .nodeCanvasObject((node, ctx, globalScale) => {
+          // const label = node.author_name;
+          const label = node.author_name.substring(0, Math.min(40,node.author_name.length))
+          let fontSize;// = Math.max(Math.min(48,Math.sqrt(node.n_works)*6),8)/globalScale;
+          if (node.type == "author") {
+            fontSize = Math.max(Math.min(48,Math.cbrt(node.n_citations)*4.3),10)/globalScale;
+          } else {
+            fontSize = Math.max(Math.min(48,Math.sqrt(node.n_citations)*0.8),10)/globalScale;
+          }
+          // console.log( "fontSize", fontSize, Math.sqrt(node.n_citations),label, node.n_citations, node.n_works, node.type)
+          ctx.font = `${fontSize}px Sans-Serif`;
+          const textWidth = ctx.measureText(label).width;
+          const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+
+          ctx.fillStyle = 'rgba(255, 135, 175, 0.8)';
+          // ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
+
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = node.color;
+          ctx.fillText(label, node.fx, node.fy);
+
+          node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+        })
+        .nodePointerAreaPaint((node, color, ctx) => {
+          ctx.fillStyle = color;
+          const bckgDimensions = node.__bckgDimensions;
+          bckgDimensions && ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
+        })
+        .enableNodeDrag(false);
+        Graph.zoomToFit(2000);
+        
+}
+
+streamingLoaderWorker.postMessage("demographics_2_oa.tsv");
+// streamingLoaderWorker.postMessage("demographics_authors.tsv");
+
+  </script>
+</body>
