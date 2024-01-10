@@ -45,3 +45,9 @@
 * transitions
   * possible, but we need other positions!
     * citation numbers...
+
+* render some as text and some as circles to save cpu
+  * make it depend on the zoom level
+
+
+* Why keeps cpu spinning?

@@ -38,19 +38,19 @@ streamingLoaderWorker.onmessage = ({
       fz: (Number(d.year)-2000)*45,
       year: Math.round(Number(d.year)),
       author_name: d.text_name,
-      text: d.text_name + "<br/>" + d.year + " n_works: " + d.n_works  + " <br/>Citations:" + 
-        d.n_citations + "<br/>" + d.text_list + "<br/>" +
-        " ", //d.x.toString().substring(0,4) + " " //+ d.y.toString().substring(0,4),
+      text_name: d.text_name,
+      text_list: d.text_list,
       n_works: Number(d.n_works),
       n_citations: Number(d.n_citations),
+      id: d.id,
       // year: Number(d.date),
-	    gender: d.predicted_gender
+	    // gender: d.predicted_gender
     }))
     .filter(d => d.year);
   data1.nodes = data1.nodes.concat(rows);
   if (finished) {
     console.log("done loading", data1.nodes.length, "rows");
-    console.log("data1", data1);
+    // console.log("data1", data1);
     // update graph
     // updateGraph();
 
@@ -66,7 +66,7 @@ streamingLoaderWorker.onmessage = ({
         },
         resultsList: {
           position: "afterend",
-          maxResults: 6,
+          maxResults: 15,
           noResults: true,
         },
         submit: true,
@@ -77,25 +77,28 @@ streamingLoaderWorker.onmessage = ({
         console.log("navigate: ", event.detail);
         console.log("navigate detail: ", event.detail.selection.value);
         Graph.centerAt(event.detail.selection.value.fx,event.detail.selection.value.fy, 1000);
-        Graph.zoom(2.1, 2000);
-    });
+        Graph.zoom(3.1, 2000);
+      });
     document.querySelector("#autoComplete").addEventListener("selection", function (event) {
     // "event.detail" carries the autoComplete.js "feedback" object
         console.log("select: ", event.detail);
         console.log("select detail: ", event.detail.selection.value);
         Graph.centerAt(event.detail.selection.value.fx,event.detail.selection.value.fy+16, 1000);
-        Graph.zoom(3.9, 2000);
-});
-  }
-  // do stuff with the data
-  Graph = ForceGraph()
+        Graph.zoom(7.9, 2000);
+      });
+    // do stuff with the data
+    Graph = ForceGraph()
       (document.getElementById('graph'))
         .graphData(data1)
-        .nodeAutoColorBy('type')
+        .nodeAutoColorBy(d => Math.round(Number(d.year/4)))
         .nodeVal('n_works')
         .nodeRelSize(3)
         // .nodeResolution(4)
-        .nodeLabel('text')
+        // .nodeLabel('text')
+        .nodeLabel(d => `${d.text_name} <br/> ${d.year}<br/> ${d.n_works}<br/>Citations: ${d.n_citations}<br/> ${d.text_list}`)
+        // text: d.text_name + "<br/>" + d.year + " n_works: " + d.n_works  + " <br/>Citations:" + 
+        //   d.n_citations + "<br/>" + d.text_list + "<br/>" +
+        //   " ", //d.x.toString().substring(0,4) + " " //+ d.y.toString().substring(0,4),
         // .d3Force('link', null)
         // .d3Force('charge', null)
         // .d3Force('center', null)
@@ -114,7 +117,7 @@ streamingLoaderWorker.onmessage = ({
           const textWidth = ctx.measureText(label).width;
           const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
 
-          ctx.fillStyle = 'rgba(255, 135, 175, 0.8)';
+          // ctx.fillStyle = 'rgba(255, 135, 175, 0.8)';
           // ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
 
           ctx.textAlign = 'center';
@@ -129,9 +132,12 @@ streamingLoaderWorker.onmessage = ({
           const bckgDimensions = node.__bckgDimensions;
           bckgDimensions && ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
         })
-        .enableNodeDrag(false);
-        Graph.zoomToFit(2000);
-        
+        .enableNodeDrag(false)
+        // .onNodeClick(node =>  window.open(`${node.id}`, '_blank'));
+    // Graph.zoomToFit(2000);
+    Graph.centerAt(2000,3000)
+    Graph.zoom(.7,1500)l 
+  } 
 }
 
 streamingLoaderWorker.postMessage("demographics_2_oa.tsv");
