@@ -12,7 +12,81 @@
 </head>
 
 <body>
+  <div style="position: absolute; width:370px;top: 0; left: 0; z-index: 999; padding: 10px; background-color: rgba(255,255,255,0.8); font-family: sans-serif;">
+   
   <input id="autoComplete" type="search" dir="ltr" spellcheck=false autocorrect="off" autocomplete="off" autocapitalize="off" maxlength="2048" tabindex="1">
+  <div id="onclickhide" style="position:relative;width: 100%;top: 0; left: 0; z-index: 0; padding: 10px; background-color: rgba(255,255,255,0.1); font-family: sans-serif; font-size: small;">
+      <h2>Demographic research map</h2>
+  <p>
+    This plot shows a few thousand of the most important authors and papers from some important demographic journals.
+    The position is determined by an algorithm that places similar titles close to each other.
+    The size of the node represents the number of citations.
+
+  </p>
+  <p>
+    <b>How to use:</b> 
+    <ul>
+      <!-- <li>Click on a node to see the author's name and the number of works and citations</li> -->
+      <!-- <li>Click on the author's name to open the author's page on <a href="https://www.demographic-research.org/">Demographic Research</a></li> -->
+      <li>Use the search box to find an author or a paper</li>
+      <li>Use the mouse wheel or two fingers to zoom in and out</li>
+    </ul>
+    
+  </p>
+  <details>
+    <summary>Details</summary>
+    <p>
+      The data was downloaded from <a href="https://openalex.org/works?sort=cited_by_count%3Adesc&column=display_name,publication_year,type,open_access.is_oa,cited_by_count&page=1&filter=primary_location.source.id%3AS184793761%7CS30543418%7CS32314625%7CS202512192%7CS79946630%7CS4210206495%7CS190460170%7CS3035070908">Open Alex</a> on 2024-01-08.
+      I included all articles from the journals 
+      <a href="https://www.demographic-research.org/">Demographic Research</a>,
+      <a href="https://read.dukeupress.edu/demography">Demography</a>, 
+      <a href="https://www.tandfonline.com/journals/rpst20">Population Studies</a>,
+      <a href="https://onlinelibrary.wiley.com/journal/17284457">Population and Development Review</a>,
+      <a href="#">Population and Policy Review</a>,
+      <a href="#">Population</a>,
+      <a href="#">Population space and place</a>,
+      <a href="#">European Journal of Population</a>,
+      <a href="#">Population Studies</a> and
+      <a href="#">Genus</a>.
+      But since 30 thousand authors and 40 thousand papers are too much for a browser, 
+      I kept only 4500 authors and 4000 papers, based on their last publication year and the number of citations.
+      
+    </p>
+    <p>
+      I used <a href="https://www.sbert.net/">SentenceTransformers</a> and the model
+       <a href="https://huggingface.co/thenlper/gte-small">thenlper/gte-small</a>
+      to create text embeddings of the titles of the articles.
+      Text embeddings are vectors with hundreds or thousands (in this case 384) of dimensions that 
+      represent the meaning of a text. Similar texts have similar embeddings.
+      Then I used <a href="https://umap-learn.readthedocs.io/">UMAP</a> to reduce the 
+      dimensionality of the embeddings to 2 dimensions. 
+      The placement of the articles in the plot is based on these 2 dimensions, 
+      no citation information is used for the placement.
+      For the authors I averaged the embeddings of all their articles and then used the same UMAP model again.
+      <br/>
+      The size of the nodes is based on the number of citations.
+      <br/>
+      The color of the nodes is based on the year of the last publication.
+      <br/>
+      I used the Javascript library <a href="https://github.com/vasturiano/force-graph">force-graph</a>
+      to paint the nodes on the canvas.
+      But I had to optimize the painting a bit so that nodes outside of the visible 
+      area are not painted and the text is only painted if you zoom in enough.
+      <br/>
+      The inspiration came from a 
+      <a href="https://www.linkedin.com/posts/ikashnitsky_demography-bibliometrics-dataviz-activity-7144977880714825728-XKhP">social media post</a>
+      by Ilya Kashnitsky which plots the 50 most prolific authors in demography. Why limit us to 50 when we can show 4500?
+
+      </p>
+      If you have any questions or suggestions, please get in touch at <a href="mailto:theile@mpidr.de">theile@mpidr.de</a>
+  </details>
+  
+</div>
+  <!-- <button id="toggleButton" onclick="var x = document.getElementById('onclickhide'); var btn = document.getElementById('toggleButton'); if(x.style.display === 'none') { x.style.display = 'block'; btn.textContent = 'Hide'; } else { x.style.display = 'none'; btn.textContent = 'Show Info'; }" style="height: 3rem; width: 370px; padding: 0 2rem; box-sizing: border-box; font-size: 1rem; text-overflow: ellipsis; color: rgba(255, 122, 122, 0.3); outline: none; border-radius: 10rem; border: 0.05rem solid rgba(255, 122, 122, 0.5); background-color: #fff; transition: all 0.4s ease; cursor: pointer;">hide info</button> -->
+  <!-- <button id="toggleButton" onclick="var x = document.getElementById('onclickhide'); var btn = document.getElementById('toggleButton'); if(x.style.display === 'none') { x.style.display = 'block'; btn.textContent = '❌'; } else { x.style.display = 'none'; btn.textContent = 'ℹ️'; }" style="height: 1rem; width: 2rem; padding: 0.5rem; box-sizing: border-box; font-size: 1rem; color: rgba(84, 57, 57, 0.8); outline: none; border-radius: 20%; border: 0.05rem solid rgba(50, 17, 17, 0.5); background-color: #fff; transition: all 0.4s ease; cursor: pointer;">ℹ️</button> -->
+  <button id="toggleButton" onclick="var x = document.getElementById('onclickhide'); var btn = document.getElementById('toggleButton'); if(x.style.display === 'none') { x.style.display = 'block'; btn.innerHTML = '&#10060;'; } else { x.style.display = 'none'; btn.innerHTML = '&#8505;'; }" style=" padding: 0.5rem; box-sizing: border-box; font-size: .75rem; color: rgba(84, 57, 57, 0.8); outline: none; border-radius: 20%;  background-color: #fff; cursor: pointer;">&#10060; close this info-box</button>
+  
+</div>
   <div id="graph"></div>
 
   <script>
@@ -43,7 +117,6 @@ streamingLoaderWorker.onmessage = ({
       n_works: Number(d.n_works),
       n_citations: Number(d.n_citations),
       id: d.id,
-      // year: Number(d.date),
 	    // gender: d.predicted_gender
     }))
     .filter(d => d.year);
@@ -90,7 +163,7 @@ streamingLoaderWorker.onmessage = ({
     Graph = ForceGraph()
       (document.getElementById('graph'))
         .graphData(data1)
-        .nodeAutoColorBy(d => Math.round(Number(d.year/4)))
+        .nodeAutoColorBy(d => Math.round((Number(d.year))/3))
         .nodeVal('n_works')
         .nodeRelSize(3)
         // .nodeResolution(4)
@@ -104,39 +177,75 @@ streamingLoaderWorker.onmessage = ({
         // .d3Force('center', null)
         
         .nodeCanvasObject((node, ctx, globalScale) => {
-          // const label = node.author_name;
-          const label = node.author_name.substring(0, Math.min(40,node.author_name.length))
           let fontSize;// = Math.max(Math.min(48,Math.sqrt(node.n_works)*6),8)/globalScale;
-          if (node.type == "author") {
-            fontSize = Math.max(Math.min(48,Math.cbrt(node.n_citations)*4.3),10)/globalScale;
+          fontSize = Math.min(36,Math.cbrt(node.n_citations+1)*1.3)/Math.sqrt(globalScale);
+          // if (node.type == "author") {
+          //   fontSize = Math.max(Math.min(48,Math.cbrt(node.n_citations)*4.3),8)/globalScale;
+          // } else {
+          //   fontSize = Math.max(Math.min(48,Math.sqrt(node.n_citations)*0.8),8)/globalScale;
+          // }
+          const xyscreen = Graph.graph2ScreenCoords(node.fx, node.fy);
+          // log ever 1000 times:
+          // if (node.index % 2000 == 0) {
+          //   // console.log(globalScale,fontSize*globalScale**2 , xyscreen," ||", Graph.screen2GraphCoords(0,0),"node", node.index, node.author_name, node.fx, node.fy, node.fz, node.year, node.n_works, node.n_citations, node.id);
+          //   // console.log(Graph.height, globalScale,fontSize*globalScale**2 , xyscreen[0], xyscreen.x);
+          // }
+          if (xyscreen.x>-30 && xyscreen.x<gwidth && xyscreen.y>-30 && xyscreen.y<gheight){
+          // if (xyscreen.x>220){
+            if (fontSize*globalScale**2 < 13  ) {
+              // Draw a circle
+              // console.log("circle", node.index, node.author_name, node.fx, node.fy, node.fz, node.year, node.n_works, node.n_citations, node.id)
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, fontSize, 0, 2 * Math.PI, false);
+              ctx.fillStyle = node.color;
+              ctx.fill();
+              node.__bckgDimensions =  [fontSize, fontSize];
+            } else {
+                // Write text label
+              // const label = node.author_name;
+              const label = node.author_name.substring(0, Math.min(40,node.author_name.length))
+              // console.log( "fontSize", fontSize, Math.sqrt(node.n_citations),label, node.n_citations, node.n_works, node.type)
+              ctx.font = `${fontSize}px Sans-Serif`;
+              const textWidth = ctx.measureText(label).width;
+              const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
+              node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
+              // ctx.fillStyle = 'rgba(255, 135, 175, 0.8)';
+              // ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
+
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = node.color;
+              ctx.fillText(label, node.fx, node.fy);
+            }
           } else {
-            fontSize = Math.max(Math.min(48,Math.sqrt(node.n_citations)*0.8),10)/globalScale;
+            node.__bckgDimensions =  [-1, -1];
           }
-          // console.log( "fontSize", fontSize, Math.sqrt(node.n_citations),label, node.n_citations, node.n_works, node.type)
-          ctx.font = `${fontSize}px Sans-Serif`;
-          const textWidth = ctx.measureText(label).width;
-          const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize * 0.2); // some padding
-
-          // ctx.fillStyle = 'rgba(255, 135, 175, 0.8)';
-          // ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
-
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = node.color;
-          ctx.fillText(label, node.fx, node.fy);
-
-          node.__bckgDimensions = bckgDimensions; // to re-use in nodePointerAreaPaint
         })
         .nodePointerAreaPaint((node, color, ctx) => {
+          if (node.__bckgDimensions[0] == -1) {
+            return;
+          }
           ctx.fillStyle = color;
           const bckgDimensions = node.__bckgDimensions;
           bckgDimensions && ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
         })
         .enableNodeDrag(false)
+        .warmupTicks(5)
+        .cooldownTicks(0)
         // .onNodeClick(node =>  window.open(`${node.id}`, '_blank'));
     // Graph.zoomToFit(2000);
     Graph.centerAt(2000,3000)
-    Graph.zoom(.7,1500)l 
+    setTimeout(() => Graph.zoom(0.7,1500), 1);//Graph.zoom(.7,1500)
+    let gwidth = Graph.width();
+    let gheight = Graph.height();
+    // Graph.coo
+    const resize2 = new ResizeObserver(function (entries) { 
+       let rect = entries[0].contentRect
+       Graph.width(rect.width).height(rect.height) 
+       gwidth = rect.width;
+       gheight = rect.height;
+      })
+    resize2.observe(document.querySelector("#graph"));
   } 
 }
 
