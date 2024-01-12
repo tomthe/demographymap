@@ -74,7 +74,7 @@
       area are not painted and the text is only painted if you zoom in enough.
       <br/>
       The inspiration came from a 
-      <a href="https://www.linkedin.com/posts/ikashnitsky_demography-bibliometrics-dataviz-activity-7144977880714825728-XKhP">social media post</a>
+      <a href="https://bsky.app/profile/ikashnitsky.phd/post/3khedvmcu4y23">social media post</a>
       by Ilya Kashnitsky which plots the 50 most prolific authors in demography. Why limit us to 50 when we can show 4500?
 
       </p>
@@ -119,7 +119,7 @@ streamingLoaderWorker.onmessage = ({
       id: d.id,
 	    // gender: d.predicted_gender
     }))
-    .filter(d => d.year);
+    // .filter(d => d.year);
   data1.nodes = data1.nodes.concat(rows);
   if (finished) {
     console.log("done loading", data1.nodes.length, "rows");
@@ -230,7 +230,7 @@ streamingLoaderWorker.onmessage = ({
           bckgDimensions && ctx.fillRect(node.fx - bckgDimensions[0] / 2, node.fy - bckgDimensions[1] / 2, ...bckgDimensions);
         })
         .enableNodeDrag(false)
-        .warmupTicks(5)
+        .warmupTicks(0)
         .cooldownTicks(0)
         // .onNodeClick(node =>  window.open(`${node.id}`, '_blank'));
     // Graph.zoomToFit(2000);
