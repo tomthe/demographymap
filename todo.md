@@ -3,8 +3,14 @@
 
 # next 
 * bug: names disappear when zoomed to far in 
-  * only on Firefox! But in firefox?
+  * only on Firefox! But why?
 * Github and readme
+* add topics to the vis
+* use url-parameters to share a position
+* make it more generic and use url-parameters to load a specific datasource
+  * have data subdir and for every datasource another subdir. This includes the primary tsv and the tiles.tsv and a js-file with configuration-variables(scalefactor, ntiles......)
+* run the embeddings on a massive dataset
+
 
 
 * send to people/twitter
@@ -59,8 +65,6 @@
       * for level in [0,1,3]... for ix in range(16) for iy in range(16) 
         * duckdb-copy select .... where ix*width/16>x>ix*width/16+width ....and relevance > level
   * How to do this with force-graph library?
-    * --Is it possible to add and remove data dynamically?
-    * --Probably: just redo the graph initialization with the actual position
     * Just change the data1 and then call Graph.graphData(data1)
     * to change the data:
       * data1.push(...data2) or data1 = [].concat(data1,data2)
@@ -69,6 +73,18 @@
     * use onZoomEnd({ k, x, y }) event to check how far zoomed in we are, and where (is also triggered by panning)
   * Problem: searching is more difficult now.
     * static-server-search: create files based on the typed-in characters: aaa.json, aab.json .... and fetch them after typing
+    * seems easy with autocomplete: change src from an array to a function that returns and array of objects
+
+* Make it generic/reusable/libary
+  * non-dynamic version: just change the data-file and maybe some variables
+  * dynamic version: a python(-library?): 
+    * takes a dataframe with x and y columns (and more), then writes the html and the data files
+      * import embeddomator
+      * embeddomator.create_and_save_html(dataframe,xcol,ycol,hovercolumns,relevancecol)
+
+* transition between different positions/columns:
+  * https://github.com/vasturiano/3d-force-graph/issues/344
+  * e.g. transition positions from x,y to n_works,averagecitations...
 
 * use top2vec to create topics which give the plot more structure from scaled away
   * https://github.com/ddangelov/Top2Vec

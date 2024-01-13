@@ -99,6 +99,39 @@ let data1 = {
   links: []
 };
 let Graph;
+let datazoom = {k:1.0, x:0, y:0};
+const ntiles = 16;
+let minmaxxy = [-9.492, 22.931,  1.708, 16.473]//[-9.936, 22.958, -5.492, 16.929]
+const scalefactor = 230;
+minmaxxy = minmaxxy.map(function(x) { return x * scalefactor; }); //[-10.0,10.0,-10.0,10.0];
+let firstlength = 0;
+let lastlength = 0;
+const tilesizex = (minmaxxy[1]-minmaxxy[0])/ntiles;
+const tilesizey = (minmaxxy[3]-minmaxxy[2])/ntiles;
+let xtile, ytile;
+console.log("minmaxxy",minmaxxy, tilesizex, tilesizey)
+
+function fetchAndDisplayNewData(zoom) {
+  // get url
+  console.log("fetchAndDisplayNewData", zoom);
+  xtile = Math.floor((zoom.x-minmaxxy[0])/tilesizex);
+  // const xtile2 = Math.floor((zoom.x-minmaxxy[0])/(minmaxxy[1]-minmaxxy[0])*ntiles);
+  ytile = Math.floor((zoom.y-minmaxxy[2])/tilesizey);
+  // const ytile2 = Math.floor((zoom.y-minmaxxy[2])/(minmaxxy[3]-minmaxxy[2])*ntiles);
+  // console.log("x y tile", xtile, ytile," tilesize x: ", tilesizex,",zoom.x:",zoom.x, tilesizey, zoom.y,minmaxxy[2]);
+  // console.log((zoom.y-minmaxxy[2])/tilesizey, "(",zoom.y, "-", minmaxxy[2], ")/", tilesizey)
+  const url = "data/"+xtile+"_"+ytile+"_dem.tsv";
+
+  // delete "old" data
+  data1.nodes = data1.nodes.slice(0,firstlength);
+
+  // fetch new data and add to graph; then save position and zoom
+  streamingLoaderWorker.postMessage(url);
+  datazoom = zoom
+  // streamingLoaderWorker.postMessage("demographics_2_oa.tsv");
+  // streamingLoaderWorker.postMessage("demographics_authors.tsv");
+  
+}
 
 const streamingLoaderWorker = new Worker("streaming-tsv-parser.js");
 streamingLoaderWorker.onmessage = ({
@@ -110,9 +143,9 @@ streamingLoaderWorker.onmessage = ({
       // x: Number(d.x),
       // y: Number(d.y),
       type: d.type,
-      fx: Number(d.x)*230,
-      fy: Number(d.y)*230,
-      fz: (Number(d.year)-2000)*45,
+      fx: Number(d.x)*scalefactor,
+      fy: Number(d.y)*scalefactor,
+      // fz: (Number(d.year)-2000)*45,
       year: Math.round(Number(d.year)),
       author_name: d.text_name,
       text_name: d.text_name,
@@ -120,12 +153,19 @@ streamingLoaderWorker.onmessage = ({
       n_works: Number(d.n_works),
       n_citations: Number(d.n_citations),
       id: d.id,
+      __bckgDimensions: [-1, -1],
 	    // gender: d.predicted_gender
     }))
+  console.log("rows", rows.length, rows[0], rows[rows.length-1])
     // .filter(d => d.year);
   data1.nodes = data1.nodes.concat(rows);
-  if (finished) {
-    console.log("done loading", data1.nodes.length, "rows");
+  if (finished && datazoom.k != 1.0) {
+    //
+    console.log("done loading after zooming", data1.nodes.length, "rows");
+    Graph.graphData(data1);
+  } else if (finished && datazoom.k == 1.0) {
+    console.log("done loading first time", data1.nodes.length, "rows");
+    firstlength = data1.nodes.length;
     // console.log("data1", data1);
     // update graph
     // updateGraph();
@@ -153,14 +193,14 @@ streamingLoaderWorker.onmessage = ({
         console.log("navigate: ", event.detail);
         console.log("navigate detail: ", event.detail.selection.value);
         Graph.centerAt(event.detail.selection.value.fx,event.detail.selection.value.fy, 1000);
-        Graph.zoom(3.1, 2000);
+        Graph.zoom(4.0, 2000);
       });
     document.querySelector("#autoComplete").addEventListener("selection", function (event) {
     // "event.detail" carries the autoComplete.js "feedback" object
         console.log("select: ", event.detail);
         console.log("select detail: ", event.detail.selection.value);
         Graph.centerAt(event.detail.selection.value.fx,event.detail.selection.value.fy+16, 1000);
-        Graph.zoom(7.9, 2000);
+        Graph.zoom(13, 2000);
       });
     // do stuff with the data
     Graph = ForceGraph()
@@ -181,7 +221,7 @@ streamingLoaderWorker.onmessage = ({
         
         .nodeCanvasObject((node, ctx, globalScale) => {
           let fontSize;// = Math.max(Math.min(48,Math.sqrt(node.n_works)*6),8)/globalScale;
-          fontSize = Math.min(36,Math.cbrt(node.n_citations+1)*1.3)/Math.sqrt(globalScale);
+          fontSize = Math.max(Math.min(40,Math.cbrt(node.n_citations+1)*1.4)/(globalScale**0.5),1);
           // if (node.type == "author") {
           //   fontSize = Math.max(Math.min(48,Math.cbrt(node.n_citations)*4.3),8)/globalScale;
           // } else {
@@ -195,7 +235,10 @@ streamingLoaderWorker.onmessage = ({
           // }
           if (xyscreen.x>-30 && xyscreen.x<gwidth && xyscreen.y>-30 && xyscreen.y<gheight){
           // if (xyscreen.x>220){
-            if (fontSize*globalScale**2 < 13  ) {
+            if (1==0){ //fontSize*globalScale**2 < 1.4  ) {
+              // Draw nothing
+              node.__bckgDimensions =  [-1, -1];
+            } else if (fontSize*globalScale**2 < 15  ) {
               // Draw a circle
               // console.log("circle", node.index, node.author_name, node.fx, node.fy, node.fz, node.year, node.n_works, node.n_citations, node.id)
               ctx.beginPath();
@@ -235,20 +278,67 @@ streamingLoaderWorker.onmessage = ({
         .enableNodeDrag(false)
         .warmupTicks(0)
         .cooldownTicks(0)
+        .onZoomEnd((zoom) => {
+          // console.log("zoomEnd always",zoom,Math.floor((zoom.y-minmaxxy[3])/(minmaxxy[3]-minmaxxy[2])*ntiles));
+          // console.log((zoom.y-minmaxxy[2])/tilesizey, "(" + zoom.y  +minmaxxy[2] + ")/" + tilesizey)
+          // fetchAndDisplayNewData(zoom);
+          // check if new data needs to be fetched:
+          const zoomlevelfetch1 = 13.1;
+          if (zoom.k > zoomlevelfetch1){ //zoomed in enough
+            if (datazoom.k <zoomlevelfetch1){
+              console.log("zoomEnd reached k>zoomlevelfetch1",zoom);
+              // fetch new data and add to graph; then save position and zoom
+              fetchAndDisplayNewData(zoom);
+              datazoom = zoom
+            } else if (xtile != Math.floor((zoom.x-minmaxxy[0])/tilesizex) || ytile != Math.floor((zoom.y-minmaxxy[2])/tilesizey)) {
+              console.log("zoomEnd reached new tile", zoom);
+              // fetch new data and add to graph; then save position and zoom
+              fetchAndDisplayNewData(zoom);
+              datazoom = zoom
+            } else if (Math.abs(datazoom.y - zoom.y)> tilesizey) {
+              console.log("zoomEnd reached y tile", zoom);
+              // fetch new data and add to graph; then save position and zoom
+              
+              fetchAndDisplayNewData(zoom);
+              datazoom = zoom
+            } else if (Math.abs(datazoom.x - zoom.x)> tilesizex) {
+              console.log("zoomEnd reached x tile", zoom);
+              // fetch new data and add to graph; then save position and zoom
+              fetchAndDisplayNewData(zoom);
+              datazoom = zoom
+            }
+          } else if (zoom.k < zoomlevelfetch1 && datazoom.k >zoomlevelfetch1){
+            datazoom.k = zoom.k;
+            console.log("zoomEnd zoomed out again k<zoomlevelfetch1", zoom);
+            //remove data
+            data1.nodes = data1.nodes.slice(0,firstlength);
+            Graph.graphData(data1);
+          }
+        })
         // .onNodeClick(node =>  window.open(`${node.id}`, '_blank'));
     // Graph.zoomToFit(2000);
-    Graph.centerAt(2000,3000)
-    setTimeout(() => Graph.zoom(0.7,1500), 1);//Graph.zoom(.7,1500)
-    let gwidth = Graph.width();
-    let gheight = Graph.height();
-    // Graph.coo
-    const resize2 = new ResizeObserver(function (entries) { 
-       let rect = entries[0].contentRect
-       Graph.width(rect.width).height(rect.height) 
-       gwidth = rect.width;
-       gheight = rect.height;
-      })
-    resize2.observe(document.querySelector("#graph"));
+    let gwidth;
+    let gheight;
+    if (datazoom.k == 1.0){
+      console.log("first graph initialization")
+      // Graph.centerAt((minmaxxy[0]+minmaxxy[1])/2,(minmaxxy[2]+minmaxxy[3])/2)
+      Graph.centerAt(2000,3000)
+      setTimeout(() => Graph.zoom(0.7,1500), 1);//Graph.zoom(.7,1500)
+      gwidth = Graph.width();
+      gheight = Graph.height();
+      // Graph.coo
+      const resize2 = new ResizeObserver(function (entries) { 
+         let rect = entries[0].contentRect
+         Graph.width(rect.width).height(rect.height) 
+         gwidth = rect.width;
+         gheight = rect.height;
+        })
+      resize2.observe(document.querySelector("#graph"));
+    } else {
+      // Graph.centerAt(datazoom.x,datazoom.y)
+      // setTimeout(() => Graph.zoom(datazoom.k,1500), 1);//Graph.zoom(.7,1500)
+      console.log("second...")
+    }
   } 
 }
 
