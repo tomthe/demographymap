@@ -4,13 +4,26 @@
 # next 
 * bug: names disappear when zoomed to far in 
   * only on Firefox! But why?
+* bug: hover sometimes doesnt work in Brave browser
+  * works good in Chrome on Hydra!?!?
+  * Maybe ... memory?
+
+* 
+
+
 * Github and readme
 * add topics to the vis
+  * rows with type="t", author_name="fertility..." n_citations = very high number
+  * show them as text from the beginning. what when zoomed in? hide or not?
+  * to fix:
+    * not super good labels
+  * change colors!
 * use url-parameters to share a position
 * make it more generic and use url-parameters to load a specific datasource
   * have data subdir and for every datasource another subdir. This includes the primary tsv and the tiles.tsv and a js-file with configuration-variables(scalefactor, ntiles......)
 * run the embeddings on a massive dataset
-
+* better generation of topic labels and topic clusters
+  * Maybe Bertopic was not bad after all? Can I get the embeddings and Umap values out?
 
 
 * send to people/twitter
@@ -33,6 +46,28 @@
       * --> a world map of all papers...
       * x,y <-- gps of affiliation + embedding scaled down to a few km
         * what if this intersects? make this dynamic? merge nearby affiliations?!
+  * Hacker News
+    * data:
+      * all submissions with at least some comments or points, text embedding of submission title
+        * Text embeddings might not be enough? because titles are sometimes too short and different...
+        * users: 
+          * average of their submissions or average of their comments or average of the submissions they commented on
+      * embed all comments, users are the average of their comments, submissions are average of their comments...
+
+* Show/Highlight links to other papers/authors on hover
+  * Which data to show?
+    * authors: all their papers
+    * papers: all their authors
+    * other possible stuff: 
+  * How to query the right data?
+    * links are a big list with [{source:id, target:id, ???},{}...]
+    * option 1: load a big source-target list on start, filter on hover/click
+      * Problem1: big file, bigger than the nodes, because every node will have several links
+      * Problem2: which should be the id? Never mind - the openalex id
+      * Problem3: Tiles. if i am in a tile, should I also have links to all other places?
+  * change graphData,
+
+  * what does anvanka use?
 * use sql.js?
   * then be able to filter by:
     * year
@@ -73,7 +108,8 @@
     * use onZoomEnd({ k, x, y }) event to check how far zoomed in we are, and where (is also triggered by panning)
   * Problem: searching is more difficult now.
     * static-server-search: create files based on the typed-in characters: aaa.json, aab.json .... and fetch them after typing
-    * seems easy with autocomplete: change src from an array to a function that returns and array of objects
+    * seems easy with autocomplete: change src from an array to a function that returns and array of objects - yes, works!
+      * json-file: starts directly with [ and then a list of objects. [{author_name:"tom", fx:5.3,fy:-2.2}, {...},...]
 
 * Make it generic/reusable/libary
   * non-dynamic version: just change the data-file and maybe some variables

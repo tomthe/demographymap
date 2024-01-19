@@ -4,7 +4,7 @@
     initial-scale=1, maximum-scale=1, user-scalable=0"/>
   <style> body { margin: 0; } </style>
 
-  <script src="//unpkg.com/force-graph"></script>
+  <script src="https://unpkg.com/force-graph"></script>
   <!--<script src="../../dist/force-graph.js"></script>-->
 
   <script src="https://unpkg.com/@tarekraafat/autocomplete.js@10.2.7/dist/autoComplete.min.js"></script>
@@ -175,6 +175,28 @@ streamingLoaderWorker.onmessage = ({
       placeHolder: "Search...",
         data: {
             src: data1.nodes,
+            // async () => {
+            //   try {
+            //     // Loading placeholder text
+            //     console.log("autocomplete is loading...");
+            //     document
+            //       .getElementById("autoComplete")
+            //       .setAttribute("placeholder", "Loading...");
+            //     // Fetch External Data Source
+            //     const source = await fetch(
+            //       "https://tarekraafat.github.io/autoComplete.js/demo/db/generic.json"
+            //     );
+            //     const data = await source.json();
+            //     // Post Loading placeholder text
+            //     document
+            //       .getElementById("autoComplete")
+            //       .setAttribute("placeholder", autoCompleteJS.placeHolder);
+            //     // Returns Fetched data
+            //     return data;
+            //   } catch (error) {
+            //     return error;
+            //   }
+            // },
             keys: ["author_name"]
         },
         resultItem: {
@@ -221,7 +243,7 @@ streamingLoaderWorker.onmessage = ({
         
         .nodeCanvasObject((node, ctx, globalScale) => {
           let fontSize;// = Math.max(Math.min(48,Math.sqrt(node.n_works)*6),8)/globalScale;
-          fontSize = Math.max(Math.min(40,Math.cbrt(node.n_citations+1)*1.4)/(globalScale**0.5),1);
+          fontSize = Math.max(Math.min(40,Math.cbrt(node.n_citations+1)*1.4)/(globalScale**0.5),.5);
           // if (node.type == "author") {
           //   fontSize = Math.max(Math.min(48,Math.cbrt(node.n_citations)*4.3),8)/globalScale;
           // } else {
@@ -238,7 +260,7 @@ streamingLoaderWorker.onmessage = ({
             if (1==0){ //fontSize*globalScale**2 < 1.4  ) {
               // Draw nothing
               node.__bckgDimensions =  [-1, -1];
-            } else if (fontSize*globalScale**2 < 15  ) {
+            } else if (fontSize*globalScale**2 < 15 && node.type != "t" ) {
               // Draw a circle
               // console.log("circle", node.index, node.author_name, node.fx, node.fy, node.fz, node.year, node.n_works, node.n_citations, node.id)
               ctx.beginPath();
@@ -260,7 +282,11 @@ streamingLoaderWorker.onmessage = ({
 
               ctx.textAlign = 'center';
               ctx.textBaseline = 'middle';
-              ctx.fillStyle = node.color;
+              if (node.type == "t") {
+                ctx.fillStyle = 'rgba(30, 60, 0, 0.8)';
+              } else {
+                ctx.fillStyle = node.color;
+              }
               ctx.fillText(label, node.fx, node.fy);
             }
           } else {
